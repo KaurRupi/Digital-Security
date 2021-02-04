@@ -1,0 +1,256 @@
+#Different approaches for Primality Test
+...........................................................................................
+...........................................................................................
+#Simple way to check if the number is prime or non-prime
+#define a function that will check the number is prime or not
+def check_prime_no_v0(number):
+    if number == 1:
+        return("Non-Prime") #1 is not prime 
+    
+    for potentialFactor in range(2, number):
+        if number%potentialFactor == 0:
+            return("Non-Prime")
+    return("Prime")
+
+#testing it one first 20 positive integers
+for number in range(1, 10):
+    print(number, check_prime_no_v0(number))
+#..........................................................................................
+#..........................................................................................
+#lets check the time, how long the above function is taking to do the primality test
+import time
+#define a function that will check the number is prime or not
+def check_prime_no_v1(number):
+    if number == 1:
+        return("Non-Prime") #1 is not prime 
+    
+    for potentialFactor in range(2, number):
+        if number%potentialFactor == 0:
+            return("Non-Prime")
+    return("Prime")
+
+#Time Function
+for number in range(1,100):
+    t0 = time.time()
+    print(number, check_prime_no_v1(number))
+    t1 = t0 - time.time() 
+    print("Time required: ", t1)
+ ...................................................................................
+ ...................................................................................
+#To reduce the time spent on primality test, 
+#we need to reduce the number of divisors we check in for loop
+#lets look into the factors of 36 
+""" 36 = 1*36
+         2*18
+         3*12
+         4*9
+         6*6
+         9*4
+         12*3
+         18*2
+         36*1
+"""
+#the first factor is always increasing and second factor is always decreasing, 
+#36 is perfect square. Since it is equal to 6 times 6
+#the factorization after 6 is same as the factorization before 6, just in reverse order 
+#if some number is not perfect square still the pattern is same
+"""  18=1*18                                               n=1*n
+       =2*9                                              =a*b
+       =3*6                                              =....
+       sqrt18 * sqrt18(srt act as a dividing line)       = sqrt(n)*sqrt(n)
+       =6*3                                              =....
+       =9*2                                              =b*a
+       =18*1                                             =n*1
+"""
+#Test all divisors from 2 through sqrt(n) to optimize the primality test
+import time
+import math 
+def check_prime_no_v2(number):
+    if number == 1:
+        return("Non-Prime") #1 is not prime 
+    
+    max_divisor = math.floor(math.sqrt(number))
+    for divisor in range(2, 1 + max_divisor):
+        if number % divisor == 0:
+            return("Non-Prime") 
+    return("Prime")
+
+#.........Test Function..............
+#.........Time Function.............
+t0 = time.time()
+for number in range(1,11):
+    print(number, check_prime_no_v2(number))
+t1 = time.time()
+print("Time required: ", t1 - t0)  
+......................................................................................
+......................................................................................
+#Still in previous program we are looping through all the numbers(redundency is there)
+#So, now Test if n is even
+#test only odd divisors
+import time
+import math 
+def check_prime_no_v3(number):
+    if number == 1:
+        return("Non-Prime") #1 is not prime 
+    #if its even and not 2, than its not prime
+    if number == 2:
+        return("Prime")
+    if number>2 and number%2==0:
+        return("Non-Prime")
+    #here, roughly we are dividing all divisibility operations to half
+    max_divisor = math.floor(math.sqrt(number)) 
+    for divisor in range(3, 1 + max_divisor, 2): #this range will start from 3 and cover only prime numbers
+        if number%divisor == 0:
+            return("Non-Prime")
+    return("Prime")
+        
+#.........Test Function..............
+#.........Time Function.............
+t0 = time.time()
+for number in range(1,11):
+    print(number, check_prime_no_v3(number))
+t1 = time.time()
+print("Time required: ", t1 - t0)
+..................................................................................................
+.....................................................................................................
+#In the above program now we will implement time for each iteration
+#here, we will calculate total time required to check prime numbers and composite numbers
+import time
+import math 
+def check_prime_no_v3(number):
+    if number == 1:
+        return("Non-Prime") #1 is not prime 
+    #if its even and not 2, than its not prime
+    if number == 2:
+        return("Prime")
+    if number>2 and number%2==0:
+        return("Non-Prime")
+    #here, roughly we are dividing all divisibility operations to half
+    max_divisor = math.floor(math.sqrt(number)) 
+    for divisor in range(3, 1 + max_divisor, 2): #this range will start from 3 and cover only prime numbers
+        if number%divisor == 0:
+            return("Non-Prime")
+    return("Prime")
+        
+#.........Test Function..............
+#.........Time Function.............
+p_time_array = [] 
+c_time_array = [] 
+p_array = []
+c_array  = []
+
+for number in range(5,10000000):
+    t0 = time.time()
+    prime_test = check_prime_no_v3(number)
+    t1 = time.time()
+    if prime_test == "Prime":
+        p_time_array.append(t1)
+        p_array.append(number)
+    else:
+        c_time_array.append(t1)
+        c_array.append(number)
+        
+ ..........................................
+ #Now we are going to plot the graph of above predictions
+import matplotlib.pyplot as plt
+plt.plot(p_array,p_time_array, label='Prime')
+plt.xlabel('Prime Number')
+plt.ylabel('Calculation Time (t)')
+plt.legend()
+plt.show()
+..............................................
+plt.plot(c_array,c_time_array, label='Non-Prime')
+plt.xlabel('Composite Number')
+plt.ylabel('Calculation Time (t)')
+plt.legend()
+plt.show()
+...............................................................
+...............................................................
+#In above program we are saving data in arrays
+#So we were getting errors of stack overflow
+#To avoid that issue, we save the data in sqlite database
+import time
+import math 
+import sqlite3
+
+def check_prime_no_v4(number):
+    if number == 1:
+        return("Non-Prime") #1 is not prime 
+    #if its even and not 2, than its not prime
+    if number == 2:
+        return("Prime")
+    if number>2 and number%2==0:
+        return("Non-Prime")
+    max_divisor = math.floor(math.sqrt(number)) 
+    for divisor in range(3, 1 + max_divisor, 2): 
+        if number%divisor == 0:
+            return("Non-Prime")
+    return("Prime")
+
+conn = sqlite3.connect('D:\MEng\Python\PC_Bank3.db')
+#conn = sqlite3.connect(':memory:')
+c=conn.cursor()
+c.execute("""CREATE TABLE IF NOT EXISTS prime_results(
+    prime_col INTEGER, 
+    time_col FLOAT
+    )""")
+c.execute("""CREATE TABLE IF NOT EXISTS composite_results(
+    composite_col INTEGER, 
+    ctime_col FLOAT
+    )""")
+conn.commit()
+     
+#.........Test Function..............
+for number in range(1,100000):
+    t0 = time.time()
+    prime_test = check_prime_no_v4(number)
+    t1 = time.time() - t0
+    if prime_test == "Prime":
+        insert_prime_param = [number,t1]
+        insert_pcommand = """INSERT INTO prime_results (prime_col, time_col) VALUES (?,?);"""
+        c.execute(insert_pcommand,insert_prime_param)
+        conn.commit()
+    else:
+        insert_composite = [number,t1]
+        insert_ccommand = """INSERT INTO composite_results (composite_col, ctime_col) VALUES (?,?);"""
+        c.execute(insert_ccommand,insert_composite)
+        conn.commit()
+#.................................................. 
+import matplotlib.pyplot as plt
+def pgraph_data():
+    c.execute('SELECT prime_col, time_col FROM prime_results')
+    data = c.fetchall()
+    p = []
+    pt = []
+    
+    for row in data:
+        p.append(row[0])
+        pt.append(row[1])
+
+    plt.plot(p,pt, label='Prime')
+    plt.xlabel('Prime Number')
+    plt.ylabel('Calculation Time (t)')
+    plt.legend()
+    plt.show()
+    
+pgraph_data()
+#.................................................
+import matplotlib.pyplot as plt
+def cgraph_data():
+    c.execute('SELECT composite_col, ctime_col FROM composite_results')
+    data = c.fetchall()
+    co = []
+    ct = []
+    
+    for row in data:
+        co.append(row[0])
+        ct.append(row[1])
+
+    plt.plot(co,ct, label='Composite')
+    plt.xlabel('Composite Number')
+    plt.ylabel('Calculation Time (t)')
+    plt.legend()
+    plt.show()
+    
+cgraph_data()
+............................................................
