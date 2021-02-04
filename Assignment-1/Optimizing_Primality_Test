@@ -1,0 +1,361 @@
+"""Write a computer program to discover the Prime Factorization of all numbers between 4 and 2,147,483,647 (maximum unsigned integer). 
+The program shall use Trial Division to discover the Prime Factorization (e.g., C=P1 x P2 x …. x Pn). 
+Your program shall record the amount of time required (t) to discover the Prime Factorization of any composite number (C) and plot them in a curve similar to the one given below.
+Write your own design notes on the difficulties you've found while developing this code. You are required to submit your design notes, your code, executable, 
+and an image representing the plotted values of your experiment. You may use the programming language of your choice, although, I prefer C/C++ in this course."""
+..........................................................................................................................................................................
+...........................................................................................................................................................................
+#As we know that the simplest way to do primality test is trial division given an input number
+#check whether it is evenly divisible by any prime number between 2 and √n , Thtas what we did in this program
+#To optimize this method we eliminated all the even numbers from each iteration
+#We saved the results in table with the help of sqlite database to avoid stack overflow issues
+#saving results in data base was also slow downing the process, we saved just prime numbers in database
+#this method is accurate but not efficient way for primality test
+import time
+import math 
+import sqlite3
+
+def check_prime_no_v4(number):
+    if number>2 and number%2==0:
+        return("Non-Prime")
+    max_divisor = math.floor(math.sqrt(number)) 
+    for divisor in range(3, 1 + max_divisor, 2): 
+        if number%divisor == 0:
+            return("Non-Prime")
+    return("Prime")
+
+conn = sqlite3.connect('Final.db')
+#D:/MEng/Python/2147483647
+c=conn.cursor()
+c.execute("""CREATE TABLE IF NOT EXISTS prime_results(
+    prime_col INTEGER, 
+    time_col FLOAT
+    )""")
+conn.commit()
+     
+#.........Test Function..............
+for number in range(5,2147483647):
+    t0 = time.time()
+    prime_test = check_prime_no_v4(number)
+    t1 = time.time() - t0
+    if prime_test == "Prime":
+        insert_prime_param = [number,t1]
+        insert_pcommand = """INSERT INTO prime_results (prime_col, time_col) VALUES (?,?);"""
+        c.execute(insert_pcommand,insert_prime_param)
+        conn.commit()
+        
+#As this method was really time consuming and taking days to reachthe billions. 
+#So we stopped the process and looked for other ways to optimize the program
+#As this method was time consuming we only saved theprime numbers list in database 
+#.....................Graph...........................
+import matplotlib.pyplot as plt
+def pgraph_data():
+    c.execute('SELECT prime_col, time_col FROM prime_results')
+    data = c.fetchall()
+    p = []
+    pt = []
+    
+    for row in data:
+        p.append(row[0])
+        pt.append(row[1])
+
+    plt.plot(p,pt, label='Prime')
+    plt.xlabel('Prime Number')
+    plt.ylabel('Calculation Time (t)')
+    plt.legend()
+    plt.show()
+    
+pgraph_data()
+#as we are moving towards the 1.75 millions the calculation time is increasing
+.......................................................................................
+.......................................................................................
+Q3: Write a computer program to check Primality of all numbers between 4 and 2,147,483,647 (maximum unsigned integer). The program can use any techniques described in class. 
+Your program should add prime numbers to the prime numbers list (Let's call it P) and composite numbers to the composite numbers list (Let's call it C). 
+Your program shall calculate and record the time required to discover Primality,
+or the lack of it. Plot the time vs number curve similar to the one given below. You can also plot the density of primes per thousand numbers and submit your findings.
+..........................................................................................................................................................................
+#Our goal is to make our algorithm more efficient
+#As we that all primes greater than 3 are of the form 6k ± 1,
+#more efficient method is to test whether n is divisible by 2 or 3, then to check through all numbers of the form 6k± 1
+#This is more efficient than testing all numbers up to sqrt of n
+import time
+import math 
+import sqlite3
+
+def check_prime_no(number):
+    if number%2==0 or number%3==0:
+        return("Non-Prime")
+    # only need to check if divisible by potential prime numbers
+    # all prime numbers are of form 6k +/- 1
+    # only need to check up to square root of number
+    #here, roughly we are dividing all divisibility operations to half
+    max_divisor = math.floor(math.sqrt(number)) 
+    for divisor in range(5, 1 + max_divisor, 6): 
+        if number % divisor == 0 or number % (divisor+2) == 0:
+            return("Non-Prime")
+    
+    return("Prime")
+    
+conn = sqlite3.connect('A1.db')
+c=conn.cursor()
+c.execute("""CREATE TABLE IF NOT EXISTS prime_results(
+    prime_col INTEGER, 
+    time_col FLOAT
+    )""")
+c.execute("""CREATE TABLE IF NOT EXISTS composite_results(
+    composite_col INTEGER, 
+    ctime_col FLOAT
+    )""")
+conn.commit()
+     
+#.........Test Function..............
+for number in range(5,20000000):
+    t0 = time.time()
+    prime_test = check_prime_no(number)
+    t1 = time.time() - t0
+    if prime_test == "Prime":
+        insert_prime_param = [number,t1]
+        insert_pcommand = """INSERT INTO prime_results (prime_col, time_col) VALUES (?,?);"""
+        c.execute(insert_pcommand,insert_prime_param)
+        conn.commit()
+    else:
+        insert_composite = [number,t1]
+        insert_ccommand = """INSERT INTO composite_results (composite_col, ctime_col) VALUES (?,?);"""
+        c.execute(insert_ccommand,insert_composite)
+        conn.commit()   
+..................................To plot Graph.........................................................
+import matplotlib.pyplot as plt
+def pgraph_data1():
+    c.execute('SELECT prime_col, time_col FROM prime_results')
+    data = c.fetchall()
+    p = []
+    pt = []
+    
+    for row in data:
+        p.append(row[0])
+        pt.append(row[1])
+
+    plt.plot(p,pt, label='Prime')
+    plt.xlabel('Prime Number')
+    plt.ylabel('Calculation Time (t)')
+    plt.legend()
+    plt.show()
+    
+pgraph_data1()
+
+#This method is more efficient than the previous algorithm. 
+#But as we are doing higher calculations time is increasing
+....................................................................
+import matplotlib.pyplot as plt
+def cgraph_data1():
+    c.execute('SELECT composite_col, ctime_col FROM composite_results')
+    data = c.fetchall()
+    co = []
+    ct = []
+    
+    for row in data:
+        co.append(row[0])
+        ct.append(row[1])
+
+    plt.plot(co,ct, label='Composite')
+    plt.xlabel('Composite Number')
+    plt.ylabel('Calculation Time (t)')
+    plt.legend()
+    plt.show()
+    
+cgraph_data1()
+...........................................................................
+#Method 3 - Fermats Primality Test
+#After that we tried the Fermats Test 
+#This test is based upon the Fermats Theorem which is a probabilistic method but faster than the previous method
+import time
+import random
+import math
+import sqlite3
+#Fermats Primality Test
+#After that we tried the Fermats Test 
+#This test is based upon the Fermats Theorem which is a probabilistic method but faster than the previous methoddef FermatPrimalityTest(number):
+    if (number > 1):
+        for time in range(3): #repeat this test few times for accuracy
+            randomNumber = random.randint(2, number)-1 #draw a random integer
+            
+            if (pow(randomNumber, number-1, number) != 1 ): #Test if a^(n-1) = 1 mod n
+                return("Non-Prime")
+        
+        return("Prime")
+    else:
+        return("Non-Prime")
+
+
+conn = sqlite3.connect('FTest1.db') #saving data in database
+c=conn.cursor()
+c.execute("""CREATE TABLE IF NOT EXISTS prime_results(
+    prime_col INTEGER, 
+    time_col FLOAT
+    )""")
+c.execute("""CREATE TABLE IF NOT EXISTS composite_results(
+    composite_col INTEGER, 
+    ctime_col FLOAT
+    )""")
+conn.commit()
+     
+#.........Test Function..............
+for number in range(1, 10000000):
+    t0 = time.time()
+    prime_test = FermatPrimalityTest(number)
+    t1 = time.time() - t0
+    if prime_test == "Prime":
+        insert_prime_param = [number,t1]
+        insert_pcommand = """INSERT INTO prime_results (prime_col, time_col) VALUES (?,?);"""
+        c.execute(insert_pcommand,insert_prime_param)
+        conn.commit()
+    else:
+        insert_composite = [number,t1]
+        insert_ccommand = """INSERT INTO composite_results (composite_col, ctime_col) VALUES (?,?);"""
+        c.execute(insert_ccommand,insert_composite)
+        conn.commit()
+#Fermat's test fails for Carmichael numbers
+#Carmichael numbers is an odd composite number which satisfies Fermat's little theorem
+#Fermats test become slow for higher calculations
+..............................................................
+import matplotlib.pyplot as plt
+def fgraph_data():
+    c.execute('SELECT prime_col, time_col FROM prime_results')
+    data = c.fetchall()
+    p = []
+    pt = []
+    
+    for row in data:
+        p.append(row[0])
+        pt.append(row[1])
+
+    plt.plot(p,pt, label='Prime')
+    plt.xlabel('Prime Number')
+    plt.ylabel('Calculation Time (t)')
+    plt.legend()
+    plt.show()
+    
+fgraph_data()
+...................................................................
+import matplotlib.pyplot as plt
+def fcgraph_data():
+    c.execute('SELECT composite_col, ctime_col FROM composite_results')
+    data = c.fetchall()
+    co = []
+    ct = []
+    
+    for row in data:
+        co.append(row[0])
+        ct.append(row[1])
+
+    plt.plot(co,ct, label='Composite')
+    plt.xlabel('Composite Number')
+    plt.ylabel('Calculation Time (t)')
+    plt.legend()
+    plt.show()
+fcgraph_data()
+......................................................................
+#So after Fermats test we tried implement Mille-Rabin test
+#As our goal was to optimize the algorithm
+#Method 4 - Miller-Rabin 
+#In this method, we used time.perf_counter() function 
+#This function returns more accurate value of time than previous time function.
+import sqlite3
+import random
+import time
+die = random.SystemRandom() # A Single dice
+def single_test(number,a):
+    exp= number-1
+    while not exp &1:
+        exp >>= 1
+        
+    if pow(a, exp, number) == 1:
+        return True
+    
+    while exp < number-1:
+        if pow(a, exp, number) == number-1:
+            return True
+        
+        exp <<= 1 #(left shifting)
+        
+    return False
+
+def miller_rabin(number, k=40): 
+        for i in range(k):
+            a = die.randrange(2, number-1)
+            if not single_test(number,a):
+                return False
+        return True
+    
+conn = sqlite3.connect('Miller_Rabin.db') #saving data in database
+c=conn.cursor()
+c.execute("""CREATE TABLE IF NOT EXISTS prime_results(
+    prime_col INTEGER, 
+    time_col FLOAT
+    )""")
+c.execute("""CREATE TABLE IF NOT EXISTS composite_results(
+    composite_col INTEGER, 
+    ctime_col FLOAT
+    )""")
+conn.commit()
+
+#.........Test Function..............
+for number in range(5, 10000000):
+    tic = time.perf_counter()
+    prime_test = miller_rabin(number)
+    toc = time.perf_counter() - tic
+    if prime_test == True:
+        insert_prime_param = [number,toc]
+        insert_pcommand = """INSERT INTO prime_results (prime_col, time_col) VALUES (?,?);"""
+        c.execute(insert_pcommand,insert_prime_param)
+        conn.commit()
+    else:
+        insert_composite = [number,toc]
+        insert_ccommand = """INSERT INTO composite_results (composite_col, ctime_col) VALUES (?,?);"""
+        c.execute(insert_ccommand,insert_composite)
+        conn.commit()
+    #...................................
+    import matplotlib.pyplot as plt
+def mgraph_data():
+    c.execute('SELECT prime_col, time_col FROM prime_results')
+    data = c.fetchall()
+    p = []
+    pt = []
+    
+    for row in data:
+        p.append(row[0])
+        pt.append(row[1])
+
+    plt.plot(p,pt, label='Prime')
+    plt.xlabel('Prime Number')
+    plt.ylabel('Calculation Time (t)')
+    plt.legend()
+    plt.show()
+    
+mgraph_data()
+#.............................................
+import matplotlib.pyplot as plt
+def mcgraph_data():
+    c.execute('SELECT composite_col, ctime_col FROM composite_results')
+    data = c.fetchall()
+    co = []
+    ct = []
+    
+    for row in data:
+        co.append(row[0])
+        ct.append(row[1])
+
+    plt.plot(co,ct, label='Composite')
+    plt.xlabel('Composite Number')
+    plt.ylabel('Calculation Time (t)')
+    plt.legend()
+    plt.show()
+mcgraph_data() 
+#................................................
+#Conclusion:
+#We tried different approaches for primality test  and implemented different methods in coding to  achieve the goal of optimization.
+#Overall, Miller Rabin method was more efficient  than Fermat's method when we move towards higher calculations in primality test.
+#..........................................................
+		
+
+    
